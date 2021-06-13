@@ -40,6 +40,38 @@ class WorkerController {
         return res.json({message: "Заявка на закупку успешно отправлена менеджеру!"});
     }
 
+    async upcomingworks(req, res) {
+        try {
+            const {user_id} = req.body;
+            const works = await sequelize.query("SELECT o.order_id, o.event_name, o.event_date, event_status, c.client_name, c.client_phone " +
+                "FROM user_orders u_o " +
+                "JOIN users u ON (u.id = u_o.user_id) " +
+                "JOIN orders o ON (o.order_id = u_o.order_id)" +
+                "JOIN clients c ON (o.client_id = c.client_id)" +
+                "WHERE o.event_status='ЗАБРОНИРОВАНО' AND u_o.user_id = $user_id", {
+                type: QueryTypes.SELECT,
+                bind: {user_id: user_id}
+            });
+            return res.json(works);
+        } catch (e) {
+            return res.json(e.message);
+        }
+    }
+
+    async completeorder(req, res) {
+        try{
+            const {order_id} = req.body;
+            const completed = await sequelize.query("UPDATE orders SET event_status = 'ВЫПОЛНЕНО' WHERE order_id = $order_id",
+                {
+                    type: QueryTypes.UPDATE,
+                    bind: {order_id: order_id}
+                });
+            return res.json({message: "Заказ выполнен!"});
+        }catch (e) {
+            return res.json(e.message);
+        }
+    }
+
     //временно нереализовано и скорее всего не будет реализовано
     async purchases(req, res) {
         //const requisites = await Requisite.findAll({where: {userid: user.id}});

@@ -19,16 +19,21 @@ class UserController {
 
     async login(req, res, next) {
        const {email, password} = req.body
-        const user = await User.findOne({where: {email}})
+        //console.log(req.body)
+        const hashPassword = await bcrypt.hash(password, 5)
+        const user = await User.findOne({where: {email, password}})
         if (!user) {
-            return next(ApiError.internal('Пользователь не найден'))
+            res.status(404).send({message: "sdkn"})
+            // return next(ApiError.internal('Пользователь не найден'))
         }
-        let comparePassword = bcrypt.compareSync(password, user.password)
-        if (!comparePassword) {
-            return next(ApiError.internal('Указан неверный пароль'))
-        }
+        // let comparePassword = bcrypt.compareSync(password, user.password)
+        // if (!comparePassword) {
+        //     return next(ApiError.internal('Пользователь не найден'))
+        // }
+        console.log(password)
         const token = generateJwt(user.id, user.email, user.role)
-        return res.json({token})
+        // console.log(token)
+        return res.status(200).send({token, user: {email, role: user.role}})
     }
 
     async orders(req, res) {

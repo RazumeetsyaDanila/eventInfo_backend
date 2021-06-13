@@ -10,7 +10,8 @@ class ApiError extends Error{
     }
 
     static internal(message) {
-        return new ApiError(500, message);
+        // return new ApiError(500, message);
+        return {status: 404, message: "work"}
     }
 
     static forbidden(message) {

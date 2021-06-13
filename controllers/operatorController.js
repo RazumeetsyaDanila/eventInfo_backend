@@ -16,7 +16,7 @@ class OperatorController {
 
     async orderadd(req, res) {
         try {
-            const {event_name, event_date, event_start_time, event_end_time, event_people_count, event_place, questQuestId, clientClientId, tariffTariffId} = req.body;
+            const {event_name, event_date, event_start_time, event_end_time, event_people_count, event_place, questQuestId, client_id, tariffTariffId} = req.body;
             const order = await Order.create({
                 event_name,
                 event_date,
@@ -26,7 +26,7 @@ class OperatorController {
                 event_place,
                 event_status: "ЗАБРОНИРОВАНО",
                 questQuestId,
-                clientClientId,
+                client_id,
                 tariffTariffId
             });
             return res.json({message: "Заказ добавлен!"});

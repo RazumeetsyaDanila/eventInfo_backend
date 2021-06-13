@@ -37,6 +37,19 @@ class ManagerController {
         return res.json(purchases);
     }
 
+    async completepurchase(req, res) {
+        try{
+            const {purchase_id} = req.body;
+            const purchase = await sequelize.query("UPDATE purchases SET purchase_status = 'ИСПОЛНЕНО' WHERE purchase_id = $purchase_id", {
+                type: QueryTypes.UPDATE,
+                bind: {purchase_id: purchase_id}
+            });
+            return res.json({message: "Заявка исполнена!"});
+        }catch (e) {
+            return res.json(e.message);
+        }
+    }
+
     async requisite(req, res) {
         try{
             const requisite = await sequelize.query("SELECT requisite_name, requisite_info, requisite_status FROM requisites", {
@@ -83,7 +96,23 @@ class ManagerController {
         }
     }*/
 
-    async works(req, res) {
+    async upcomingworks(req, res) {
+        try {
+            const works = await sequelize.query("SELECT o.order_id, o.event_name, o.event_date, event_status, c.client_name, c.client_phone " +
+                "FROM user_orders u_o " +
+                "JOIN users u ON (u.id = u_o.user_id) " +
+                "JOIN orders o ON (o.order_id = u_o.order_id)" +
+                "JOIN clients c ON (o.client_id = c.client_id)" +
+                "WHERE o.event_status='ЗАБРОНИРОВАНО'", {
+                type: QueryTypes.SELECT
+            });
+            return res.json(works);
+        } catch (e) {
+            return res.json(e.message);
+        }
+    }
+
+    async completeworks(req, res) {
         const {user_id} = req.body;
         try {
             const works = await sequelize.query("SELECT o.order_id, u.name, o.event_name, o.event_date, o.event_status " +
@@ -110,7 +139,8 @@ class ManagerController {
             return next(ApiError.badRequest('Пользователь с таким email уже существует'))
         }
         const hashPassword = await bcrypt.hash(password, 5)
-        const user = await User.create({name, email, role, password: hashPassword})
+        // const user = await User.create({name, email, role, password: hashPassword})
+        const user = await User.create({name, email, role, password})
         const token = generateJwt(user.id, user.email, user.role)
         return res.json({token})
     }
