@@ -4,7 +4,7 @@ const {QueryTypes} = require('sequelize');
 const ApiError = require('../error/ApiError');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
-const {User, Tariff, Purchase, Requisite, Order} = require('../models/models');
+const {User, Tariff, Purchase, Requisite, Order, UserOrder} = require('../models/models');
 
 const generateJwt = (id, email, role) => {
     return jwt.sign(
@@ -87,15 +87,6 @@ class ManagerController {
     async assignment(req, res) {
         const {user_id, order_id} = req.body;
         try {
-            const orders_in_progress = await sequelize.query("SELECT u_o.order_id FROM user_orders u_o JOIN orders o ON (u_o.order_id = o.order_id) " +
-                "WHERE u_o.user_id = $user_id and o.event_status = 'ЗАБРОНИРОВАНО'",
-                {type: QueryTypes.SELECT, bind: {user_id: user_id}});
-            //return res.json({orders_in_progress})
-        } catch (e) {
-            return res.json(e.message);
-        }
-
-        try {
             const time_appoint = await sequelize.query("SELECT date_part('year',o.event_date) as event_year, " +
                 "date_part('month',o.event_date) as event_month, " +
                 "date_part('day',o.event_date) as event_day, " +
@@ -104,18 +95,50 @@ class ManagerController {
                 "date_part('minute',o.event_start_time) as start_minute " +
                 "FROM orders o WHERE o.order_id = $order_id",
                 {type: QueryTypes.SELECT, bind: {order_id: order_id}});
-            const {event_year, event_month, event_day, start_hour, end_hour}  = time_appoint[0];
-            return res.json({time_appoint})
+            var {event_year, event_month, event_day, start_hour, end_hour} = time_appoint[0];
         } catch (e) {
             return res.json(e.message);
         }
-
         //на данный момент мы имеем массив id-шников всех забронированных заказов выбранного ведущего, а также точное время нового заказа
-
-        //следующим шагом необходимо найти те заказы, которые забронированы на тот же год что и назначаемый заказ, иначе выполнить успешное назначение
-        //следующим шагом необходимо найти те заказы, которые забронированы на тот же месяц что и назначаемый заказ, иначе выполнить успешное назначение
         //следующим шагом необходимо найти те заказы, которые забронированы на тот же день что и назначаемый заказ, иначе выполнить успешное назначение
-        //следующим шагом необходимо найти интервалы времени, на которых ведущий занят в этот день
+        try {
+            const competing_orders = await sequelize.query("SELECT u_o.order_id, date_part('hour',o.event_start_time) AS start_time, date_part('hour',o.event_end_time) AS end_time " +
+                "FROM user_orders u_o JOIN orders o ON (u_o.order_id = o.order_id) " +
+                "WHERE u_o.user_id = $user_id and o.event_status = 'ЗАБРОНИРОВАНО' and " +
+                "o.order_id != $order_id and " +
+                "date_part('year',o.event_date) = $event_year and " +
+                "date_part('month',o.event_date) = $event_month and " +
+                "date_part('day',o.event_date) = $event_day",
+                {
+                    type: QueryTypes.SELECT,
+                    bind: {user_id: user_id, order_id: order_id, event_year: event_year, event_month: event_month, event_day: event_day}
+                });
+            if (Object.keys(competing_orders).length == 0) {
+                //запрос на назначение ведущего
+                const success_assignment = await sequelize.query("INSERT INTO user_orders (user_id, order_id) VALUES ($user_id, $order_id)",
+                    {
+                        type: QueryTypes.SELECT,
+                        bind: {user_id: user_id, order_id: order_id}
+                    });
+                return res.json({message: 'Ведущий назначен!'})
+            }
+            const orders_count = competing_orders.length;
+            for (let i = 0; i < orders_count; i++){
+                if(start_hour > competing_orders[i].start_time && start_hour < competing_orders[i].end_time
+                    || end_hour > competing_orders[i].start_time && start_hour < competing_orders[i].end_time){
+                    return res.json({message: "Выбранный ведущий занят в это время!"})
+                }
+            }
+            //запрос на назначение ведущего
+            const success_assignment = await sequelize.query("INSERT INTO user_orders (user_id, order_id) VALUES ($user_id, $order_id)",
+                {
+                    type: QueryTypes.SELECT,
+                    bind: {user_id: user_id, order_id: order_id}
+                });
+            return res.json({message: 'Ведущий назначен!'});
+        } catch (e) {
+            return res.json(e.message);
+        }
     }
 }
 
