@@ -19,22 +19,34 @@ class ManagerController {
     async tariffadd(req, res) {
         const {tariff_name, tariff_price, salary_worker} = req.body;
         const tariff = await Tariff.create({tariff_name, tariff_price, salary_worker});
-        return res.json(tariff);
+        return res.json({message: "Тариф добавлен!"});
     }
 
     async unprocessedpursh(req, res) {
-        const purchases = await Purchase.findAll({where: {purchase_status: "ОЖИДАЕТСЯ ЗАКУПКА"}});
+        const purchases = await sequelize.query("SELECT r.requisite_name, p.purchase_status FROM purchases p JOIN requisites r ON (p.requisite_id = r.requisite_id)" +
+            "WHERE p.purchase_status = 'ОЖИДАЕТСЯ ЗАКУПКА'", {
+            type: QueryTypes.SELECT
+        });
         return res.json(purchases);
     }
 
     async purchases(req, res) {
-        const purchases = await Purchase.findAll();
+        const purchases = await sequelize.query("SELECT r.requisite_name, p.purchase_status FROM purchases p JOIN requisites r ON (p.requisite_id = r.requisite_id)", {
+            type: QueryTypes.SELECT
+        });
         return res.json(purchases);
     }
 
     async requisite(req, res) {
-        const requisite = await Requisite.findAll();
-        return res.json(requisite);
+        try{
+            const requisite = await sequelize.query("SELECT requisite_name, requisite_info, requisite_status FROM requisites", {
+                type: QueryTypes.SELECT
+            });
+            return res.json(requisite);
+        }
+        catch (e) {
+            return res.json(e.message);
+        }
     }
 
     async report(req, res, next) {
@@ -42,13 +54,15 @@ class ManagerController {
     }
 
     async workers(req, res) {
-        const workers = await User.findAll({where: {role: "WORKER"}});
+        const workers = await sequelize.query("SELECT name, email, role FROM users", {
+            type: QueryTypes.SELECT
+        });
         return res.json(workers);
     }
 
     //date_part('day',o.event_date)
-    async works(req, res) {
-        const {user_id} = req.query;
+    /*async works(req, res) {
+        const {user_id} = req.body;
         try {
             const works = await sequelize.query("SELECT u.name, o.order_id, " +
                 "date_part('year',o.event_date) as event_year, " +
@@ -59,7 +73,24 @@ class ManagerController {
                 "FROM user_orders u_o " +
                 "JOIN users u ON (u.id = u_o.user_id) " +
                 "JOIN orders o ON (o.order_id = u_o.order_id)" +
-                "WHERE o.event_status='ЗАБРОНИРОВАНО' and u.id = $user_id", {
+                "WHERE o.event_status='ВЫПОЛНЕНО' and u.id = $user_id", {
+                type: QueryTypes.SELECT,
+                bind: {user_id: user_id}
+            });
+            return res.json(works);
+        } catch (e) {
+            return res.json(e.message);
+        }
+    }*/
+
+    async works(req, res) {
+        const {user_id} = req.body;
+        try {
+            const works = await sequelize.query("SELECT o.order_id, u.name, o.event_name, o.event_date, o.event_status " +
+                "FROM user_orders u_o " +
+                "JOIN users u ON (u.id = u_o.user_id) " +
+                "JOIN orders o ON (o.order_id = u_o.order_id)" +
+                "WHERE o.event_status='ВЫПОЛНЕНО' and u.id = $user_id", {
                 type: QueryTypes.SELECT,
                 bind: {user_id: user_id}
             });
@@ -117,7 +148,7 @@ class ManagerController {
                 //запрос на назначение ведущего
                 const success_assignment = await sequelize.query("INSERT INTO user_orders (user_id, order_id) VALUES ($user_id, $order_id)",
                     {
-                        type: QueryTypes.SELECT,
+                        type: QueryTypes.INSERT,
                         bind: {user_id: user_id, order_id: order_id}
                     });
                 return res.json({message: 'Ведущий назначен!'})
@@ -132,7 +163,7 @@ class ManagerController {
             //запрос на назначение ведущего
             const success_assignment = await sequelize.query("INSERT INTO user_orders (user_id, order_id) VALUES ($user_id, $order_id)",
                 {
-                    type: QueryTypes.SELECT,
+                    type: QueryTypes.INSERT,
                     bind: {user_id: user_id, order_id: order_id}
                 });
             return res.json({message: 'Ведущий назначен!'});
