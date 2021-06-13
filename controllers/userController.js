@@ -32,16 +32,13 @@ class UserController {
     }
 
     async orders(req, res) {
-        const orders = await Order.findAll();
+        const orders = await sequelize.query("SELECT event_date, event_start_time, event_end_time, " +
+            "event_people_count, event_place, event_name, event_status FROM orders", { type: QueryTypes.SELECT});
         return res.json(orders);
     }
 
     async tariffs(req, res) {
-        const price = 2000;
-        //const tariffs = await Tariff.findAll();
-        //const [tariffs, metadata] = await sequelize.query("SELECT * FROM Tariffs WHERE tariff_price = 1000")
-        //const tariffs = await sequelize.query("SELECT * FROM Tariffs WHERE tariff_price = $price", { type: QueryTypes.SELECT, bind:{price: price}})
-        const tariffs = await sequelize.query("SELECT * FROM tariffs", { type: QueryTypes.SELECT});
+        const tariffs = await sequelize.query("SELECT tariff_name, tariff_price, salary_worker FROM tariffs", { type: QueryTypes.SELECT});
         return res.json(tariffs);
     }
 
