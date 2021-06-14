@@ -19,27 +19,30 @@ class UserController {
 
     async login(req, res, next) {
        const {email, password} = req.body
-        //console.log(req.body)
         const hashPassword = await bcrypt.hash(password, 5)
         const user = await User.findOne({where: {email, password}})
         if (!user) {
-            res.status(404).send({message: "sdkn"})
+            res.status(404).send({message: "Пользователь не найден!"})
             // return next(ApiError.internal('Пользователь не найден'))
         }
         // let comparePassword = bcrypt.compareSync(password, user.password)
         // if (!comparePassword) {
         //     return next(ApiError.internal('Пользователь не найден'))
         // }
-        console.log(password)
         const token = generateJwt(user.id, user.email, user.role)
-        // console.log(token)
         return res.status(200).send({token, user: {email, role: user.role}})
     }
 
     async orders(req, res) {
-        const orders = await sequelize.query("SELECT event_date, event_start_time, event_end_time, " +
-            "event_people_count, event_place, event_name, event_status FROM orders", { type: QueryTypes.SELECT});
-        return res.json(orders);
+        try{
+            const orders = await sequelize.query("SELECT u.name, o.order_id, o.event_date, o.event_start_time, o.event_end_time, " +
+                "o.event_people_count, o.event_place, o.event_name, o.event_status FROM orders o " +
+                "LEFT JOIN user_orders u_o ON (u_o.order_id = o.order_id)" +
+                "LEFT JOIN users u ON (u.id = u_o.user_id)", { type: QueryTypes.SELECT});
+            return res.status(200).send(orders);
+        }catch (e) {
+            return res.status(405).send(e.message);
+        }
     }
 
     async tariffs(req, res) {
