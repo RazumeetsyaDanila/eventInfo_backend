@@ -35,9 +35,19 @@ class WorkerController {
     }
 
     async purshasecreate(req, res) {
-        const {req_id} = req.body;
-        const newpurchase = await Purchase.create({purchase_status: "ОЖИДАЕТСЯ ЗАКУПКА", requisiteRequisiteId: req_id});
-        return res.json({message: "Заявка на закупку успешно отправлена менеджеру!"});
+        try{
+            const {req_id} = req.body;
+            const newpurchase = await sequelize.query("INSERT INTO purchases (requisite_id, purchase_status) " +
+                "VALUES ($requisite_id, $purchase_status)",
+                {
+                    type: QueryTypes.INSERT,
+                    bind: {requisite_id: req_id,purchase_status: "ОЖИДАЕТСЯ ЗАКУПКА"}
+                });
+            return res.json({message: "Заявка на закупку успешно отправлена менеджеру!"});
+        }catch (e) {
+            return res.json(e.message)
+        }
+
     }
 
     async upcomingworks(req, res) {

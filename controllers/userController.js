@@ -54,11 +54,15 @@ class UserController {
   }
 
   async tariffs(req, res) {
-    const tariffs = await sequelize.query(
-      "SELECT tariff_name, tariff_price, salary_worker FROM tariffs",
-      { type: QueryTypes.SELECT }
-    );
-    return res.json(tariffs);
+    try{
+      const tariffs = await sequelize.query(
+          "SELECT tariff_name, tariff_price, salary_worker FROM tariffs",
+          { type: QueryTypes.SELECT }
+      );
+      return res.json(tariffs);
+    }catch (e) {
+      return res.json(e.message)
+    }
   }
 
   async check(req, res) {
