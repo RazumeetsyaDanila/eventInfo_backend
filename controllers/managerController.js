@@ -57,14 +57,13 @@ class ManagerController {
 
     async completepurchase(req, res) {
         try {
-            const {purchase_id, purchase_date, purchase_price} = req.body;
+            const {purchase_id, purchase_price} = req.body;
             const purchase = await sequelize.query(
-                "UPDATE purchases SET purchase_date = $purchase_date, purchase_price = $purchase_price, purchase_status = $purchase_status WHERE purchase_id = $purchase_id",
+                "UPDATE purchases SET purchase_price = $purchase_price, purchase_status = $purchase_status WHERE purchase_id = $purchase_id",
                 {
                     type: QueryTypes.UPDATE,
                     bind: {
                         purchase_id: purchase_id,
-                        purchase_date: purchase_date,
                         purchase_price: purchase_price,
                         purchase_status: "ИСПОЛНЕНО"
                     }
