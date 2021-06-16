@@ -4,7 +4,7 @@ const { QueryTypes } = require("sequelize");
 const ApiError = require("../error/ApiError");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const { User, Tariff, Order } = require("../models/models");
+const { User, Tariff, Order, Client } = require("../models/models");
 
 const generateJwt = (id, email, role) => {
   return jwt.sign({ id, email, role }, process.env.SECRET_KEY, {
@@ -60,6 +60,18 @@ class UserController {
           { type: QueryTypes.SELECT }
       );
       return res.json(tariffs);
+    }catch (e) {
+      return res.json(e.message)
+    }
+  }
+
+  async clients(req, res) {
+    try{
+      const clients = await sequelize.query(
+          "SELECT * FROM clients",
+          { type: QueryTypes.SELECT }
+      );
+      return res.json(clients);
     }catch (e) {
       return res.json(e.message)
     }

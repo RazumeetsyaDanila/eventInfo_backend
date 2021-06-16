@@ -7,5 +7,6 @@ router.post("/login", userController.login);
 router.get("/auth", authMiddleware, userController.check);
 router.get("/orders", userController.orders);
 router.get("/tariffs", authMiddleware, userController.tariffs);
+router.get("/clients", authMiddleware, userController.clients);
 
 module.exports = router;

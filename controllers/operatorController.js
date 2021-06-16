@@ -1,5 +1,5 @@
 const sequelize = require("../db");
-const { QueryTypes } = require("sequelize");
+const {QueryTypes} = require("sequelize");
 
 const ApiError = require('../error/ApiError');
 const {Client, Order} = require('../models/models')

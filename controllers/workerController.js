@@ -53,7 +53,7 @@ class WorkerController {
     async upcomingworks(req, res) {
         try {
             const {user_id} = req.body;
-            const works = await sequelize.query("SELECT o.order_id, o.event_name, o.event_date, event_status, c.client_name, c.client_phone " +
+            const works = await sequelize.query("SELECT o.order_id, o.event_name, o.event_date, o.event_place, event_status, c.client_name, c.client_phone " +
                 "FROM user_orders u_o " +
                 "JOIN users u ON (u.id = u_o.user_id) " +
                 "JOIN orders o ON (o.order_id = u_o.order_id)" +
