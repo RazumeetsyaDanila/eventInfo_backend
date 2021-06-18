@@ -47,7 +47,6 @@ class WorkerController {
         }catch (e) {
             return res.json(e.message)
         }
-
     }
 
     async upcomingworks(req, res) {
